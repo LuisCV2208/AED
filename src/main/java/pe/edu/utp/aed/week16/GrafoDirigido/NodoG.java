@@ -27,3 +27,6 @@ public class NodoG {
         this.ciudad = ciudad;
     }
 }
+
+
+

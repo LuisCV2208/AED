@@ -3,7 +3,7 @@ package pe.edu.utp.aed.week16.GrafoDirigido;
 import java.util.*;
 
 public class GrafoDirigido {
-    ArrayList<NodoG> nodos;
+    private final ArrayList<NodoG> nodos;
 
     public GrafoDirigido(Collection<Ciudad> ciudades) {
         nodos = new ArrayList<>();
@@ -13,83 +13,121 @@ public class GrafoDirigido {
     }
 
     public void agregarEnlace(Ciudad origen, Ciudad destino, double costo) {
-        NodoG nodoOrigen = nodos.stream().filter((NodoG ng) -> ng.getCiudad().equals(origen)).toList().get(0);
-        NodoG nodoDestino = nodos.stream().filter((NodoG ng) -> ng.getCiudad().equals(destino)).toList().get(0);
-        nodoOrigen.getEnlaces().add(new Enlace(nodoDestino, costo));
-    }
-
-    public void recorridoGrafo(Ciudad origen, Ciudad destino) {
-        NodoG nodoOrigen = nodos.stream().filter((NodoG ng) -> ng.getCiudad().equals(origen)).toList().get(0);
-        NodoG nodoDestino = nodos.stream().filter((NodoG ng) -> ng.getCiudad().equals(destino)).toList().get(0);
-        visitaNodo(nodoOrigen, nodoDestino, "");
-    }
-
-    private void visitaNodo(NodoG nodoActual, NodoG nodoDestino, String ruta) {
-        if (nodoActual.getCiudad().equals(nodoDestino.getCiudad())) {
-            // TODO: cambiar por una estructura que almacene las rutas posibles
-            // entre un origen y un destino
-            System.out.println(ruta + nodoActual.getCiudad().getNombre());
-            return;
-        }
-        for (Enlace enlace : nodoActual.getEnlaces()) {
-            visitaNodo(enlace.getDestino(), nodoDestino, ruta + nodoActual.getCiudad().getNombre() + "/");
+        NodoG nodoOrigen = obtenerNodo(origen);
+        NodoG nodoDestino = obtenerNodo(destino);
+        if (nodoOrigen != null && nodoDestino != null) {
+            nodoOrigen.getEnlaces().add(new Enlace(nodoDestino, costo));
         }
     }
 
-    public String obtenerReporteCostosMinimos(Ciudad origen) {
-        // Algoritmo de Dijkstra para hallar costos mínimos
-        // Adaptado de: https://www.geeksforgeeks.org/dijkstras-shortest-path-algorithm-in-java-using-priorityqueue/
-        double[] costos = new double[nodos.size()];
-        boolean[] visitados = new boolean[nodos.size()];
+    public List<Ciudad> encontrarRutaMinima(Ciudad origen, Ciudad destino) {
+        Map<Ciudad, Ciudad> predecesores = new HashMap<>();
+        Map<Ciudad, Double> distancias = new HashMap<>();
+        PriorityQueue<NodoG> cola = new PriorityQueue<>(Comparator.comparingDouble(nodo -> distancias.get(nodo.getCiudad())));
 
-        PriorityQueue<Enlace> colaPrioritaria =
-                new PriorityQueue<>(nodos.size(), Comparator.comparingDouble(Enlace::getCosto));
-        Arrays.fill(costos, Double.MAX_VALUE);
+        for (NodoG nodo : nodos) {
+            distancias.put(nodo.getCiudad(), Double.MAX_VALUE);
+        }
+        distancias.put(origen, 0.0);
+        cola.add(obtenerNodo(origen));
 
-        int indiceOrigen = obtenerPosicion(origen);
-        costos[indiceOrigen] = 0;
+        while (!cola.isEmpty()) {
+            NodoG actual = cola.poll();
 
-        colaPrioritaria.add(new Enlace(obtenerNodo(origen), 0));
+            for (Enlace enlace : actual.getEnlaces()) {
+                NodoG vecino = enlace.getDestino();
+                double nuevaDistancia = distancias.get(actual.getCiudad()) + enlace.getCosto();
 
-        while (!colaPrioritaria.isEmpty()) {
-            NodoG nodoDestino = colaPrioritaria.poll().getDestino();
-            int posicionDestino = obtenerPosicion(nodoDestino.getCiudad());
-            visitados[posicionDestino] = true;
-
-            for (Enlace enlace : nodoDestino.getEnlaces()) {
-                int posicionDestinoEnlace = obtenerPosicion(enlace.getDestino().getCiudad());
-                if (!visitados[posicionDestinoEnlace] &&
-                        costos[posicionDestino] != Double.MAX_VALUE &&
-                        costos[posicionDestino] + enlace.getCosto() < costos[posicionDestinoEnlace]) {
-                    costos[posicionDestinoEnlace] = costos[posicionDestino] + enlace.getCosto();
-                    colaPrioritaria.add(new Enlace(enlace.getDestino(), costos[posicionDestinoEnlace]));
+                if (nuevaDistancia < distancias.get(vecino.getCiudad())) {
+                    distancias.put(vecino.getCiudad(), nuevaDistancia);
+                    predecesores.put(vecino.getCiudad(), actual.getCiudad());
+                    cola.add(vecino);
                 }
             }
         }
 
-        return generarReporte(costos);
+        List<Ciudad> ruta = new LinkedList<>();
+        Ciudad paso = destino;
+        if (predecesores.get(paso) != null || paso.equals(origen)) {
+            while (paso != null) {
+                ruta.add(0, paso);
+                paso = predecesores.get(paso);
+            }
+        }
+        return ruta.isEmpty() ? null : ruta;
     }
 
-    private String generarReporte(double[] costos) {
-        StringBuilder sbReporte = new StringBuilder();
-        for (int i = 0; i < costos.length; i++) {
-            sbReporte.append(String.format("%s %f\n", nodos.get(i).getCiudad().getNombre(), costos[i]));
+    public List<Ciudad> encontrarSegundaRutaMinima(Ciudad origen, Ciudad destino) {
+        List<Ciudad> rutaMinima = encontrarRutaMinima(origen, destino);
+        if (rutaMinima == null || rutaMinima.isEmpty()) {
+            return null;
         }
-        return sbReporte.toString();
+
+        PriorityQueue<List<Ciudad>> rutas = new PriorityQueue<>(Comparator.comparingDouble(this::calcularCostoRuta));
+        rutas.add(rutaMinima);
+
+        Set<String> visitadas = new HashSet<>();
+        visitadas.add(rutaMinima.toString());
+
+        List<Ciudad> segundaRutaMinima = null;
+
+        while (!rutas.isEmpty()) {
+            List<Ciudad> rutaActual = rutas.poll();
+
+            if (segundaRutaMinima != null && calcularCostoRuta(rutaActual) > calcularCostoRuta(segundaRutaMinima)) {
+                break;
+            }
+
+            if (!rutaActual.equals(rutaMinima)) {
+                segundaRutaMinima = rutaActual;
+                break;
+            }
+
+            for (int i = 0; i < rutaActual.size() - 1; i++) {
+                Ciudad nodoOrigen = rutaActual.get(i);
+                Ciudad nodoDestino = rutaActual.get(i + 1);
+
+                eliminarEnlace(obtenerNodo(nodoOrigen), obtenerNodo(nodoDestino));
+                List<Ciudad> nuevaRuta = encontrarRutaMinima(origen, destino);
+                agregarEnlace(nodoOrigen, nodoDestino, calcularCosto(obtenerNodo(nodoOrigen), obtenerNodo(nodoDestino)));
+
+                if (nuevaRuta != null && !visitadas.contains(nuevaRuta.toString())) {
+                    rutas.add(nuevaRuta);
+                    visitadas.add(nuevaRuta.toString());
+                }
+            }
+        }
+        return segundaRutaMinima;
     }
 
-    private int obtenerPosicion(Ciudad ciudad) {
-        for (int i = 0; i < nodos.size(); i++) {
-            if (nodos.get(i).getCiudad().getNombre().equals(ciudad.getNombre()))
-                return i;
+    private double calcularCostoRuta(List<Ciudad> ruta) {
+        double costo = 0;
+        for (int i = 0; i < ruta.size() - 1; i++) {
+            NodoG nodoOrigen = obtenerNodo(ruta.get(i));
+            NodoG nodoDestino = obtenerNodo(ruta.get(i + 1));
+            costo += calcularCosto(nodoOrigen, nodoDestino);
         }
-        return -1;
+        return costo;
+    }
+
+    private void eliminarEnlace(NodoG origen, NodoG destino) {
+        origen.getEnlaces().removeIf(enlace -> enlace.getDestino().equals(destino));
+    }
+
+    private double calcularCosto(NodoG origen, NodoG destino) {
+        for (Enlace enlace : origen.getEnlaces()) {
+            if (enlace.getDestino().equals(destino)) {
+                return enlace.getCosto();
+            }
+        }
+        return Double.MAX_VALUE;
     }
 
     private NodoG obtenerNodo(Ciudad ciudad) {
         for (NodoG nodo : nodos) {
-            if (nodo.getCiudad().getNombre().equals(ciudad.getNombre()))
+            if (nodo.getCiudad().equals(ciudad)) {
                 return nodo;
+            }
         }
         return null;
     }

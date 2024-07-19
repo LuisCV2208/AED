@@ -4,6 +4,11 @@ public class Enlace {
     private NodoG destino;
     private double costo;
 
+    public Enlace(NodoG destino, double costo) {
+        this.destino = destino;
+        this.costo = costo;
+    }
+
     public NodoG getDestino() {
         return destino;
     }
@@ -19,9 +24,7 @@ public class Enlace {
     public void setCosto(double costo) {
         this.costo = costo;
     }
-
-    public Enlace(NodoG destino, double costo) {
-        this.destino = destino;
-        this.costo = costo;
-    }
 }
+
+
+

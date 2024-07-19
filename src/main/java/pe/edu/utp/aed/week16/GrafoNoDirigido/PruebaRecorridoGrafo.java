@@ -14,6 +14,6 @@ public class PruebaRecorridoGrafo {
         grafo.agregarEnlace("D", "E");
 
         grafo.recorridoPorAmplitud("A", "E");
-        //grafo.recorridoEnProfundidad("A");
+        //grafo.recorridoEnProfundidad("A",);
     }
 }

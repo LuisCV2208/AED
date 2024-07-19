@@ -1,4 +1,6 @@
 package pe.edu.utp.aed.week16.GrafoDirigido;
+
+
 public class Enlace {
     private NodoG destino;
     private double costo;

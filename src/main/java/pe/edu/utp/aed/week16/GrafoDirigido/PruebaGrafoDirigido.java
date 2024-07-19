@@ -35,7 +35,7 @@ public class PruebaGrafoDirigido {
         grafo.agregarEnlace(dicCiudades.get("J"), dicCiudades.get("I"), 8);
         grafo.agregarEnlace(dicCiudades.get("K"), dicCiudades.get("J"), 7);
 
-        List<List<Ciudad>> rutas = grafo.encontrarRutas(dicCiudades.get("A"), dicCiudades.get("K"));
+        List<List<Ciudad>> rutas = grafo.encontrarRutas(dicCiudades.get("A"), dicCiudades.get("C"));
         System.out.println("TODAS LAS RUTAS");
         for (List<Ciudad> ruta : rutas) {
             for (Ciudad ciudad : ruta) {
@@ -44,11 +44,15 @@ public class PruebaGrafoDirigido {
             System.out.println();
         }
 
-        List<Ciudad> rutaMenorCosto = grafo.rutaMenorCosto(dicCiudades.get("A"), dicCiudades.get("K"));
-        System.out.println("Ruta de menor costo es :");
-        for (Ciudad ciudad : rutaMenorCosto) {
+        // Encontrar y mostrar la ruta de menor costo de A a K
+        GrafoDirigido.RutaMenorCostoResult resultado = grafo.rutaMenorCosto(dicCiudades.get("A"), dicCiudades.get("C"));
+        System.out.println("Ruta de menor costo es:" );
+        for (Ciudad ciudad : resultado.ruta) {
             System.out.print(ciudad.getNombre() + " ");
         }
+        System.out.println("\nCosto de la ruta de menor costo: " + resultado.costo);
+
+
     }
 }
 

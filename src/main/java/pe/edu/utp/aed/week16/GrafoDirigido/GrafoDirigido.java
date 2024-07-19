@@ -70,7 +70,7 @@ public class GrafoDirigido {
     }
 
     // Función para encontrar la ruta de menor costo
-    public List<Ciudad> rutaMenorCosto(Ciudad origen, Ciudad destino) {
+    public RutaMenorCostoResult rutaMenorCosto(Ciudad origen, Ciudad destino) {
         List<List<Ciudad>> rutas = encontrarRutas(origen, destino);
         List<Ciudad> rutaMenorCosto = null;
         double menorCosto = Double.MAX_VALUE;
@@ -83,6 +83,18 @@ public class GrafoDirigido {
             }
         }
 
-        return rutaMenorCosto;
+        return new RutaMenorCostoResult(rutaMenorCosto, menorCosto);
+    }
+
+    // Clase para representar el resultado de la ruta de menor costo
+    public static class RutaMenorCostoResult {
+        public List<Ciudad> ruta;
+        public double costo;
+
+        public RutaMenorCostoResult(List<Ciudad> ruta, double costo) {
+            this.ruta = ruta;
+            this.costo = costo;
+        }
     }
 }
+
